@@ -1,0 +1,170 @@
+ANS-2->
+
+from collections import deque, defaultdict
+class SocialNetwork:
+    def __init__(self):
+        # Use defaultdict to avoid checking if the key exists
+        self.network = defaultdict(set)
+    def add_friend(self, person, friend):
+        self.network[person].add(friend)
+        self.network[friend].add(person)
+    def get_friends(self, person):
+        return self.network[person]
+    def common_friends(self, person1, person2):
+        # Return the intersection of the two sets of friends
+        return self.network[person1].intersection(self.network[person2])
+    def find_connection(self, person1, person2):
+        if person1 not in self.network or person2 not in self.network:
+            return -1
+
+        visited = set([person1])
+        queue = deque([(person1, 1)])  # (current person, depth)
+
+        while queue:
+            current_person, depth = queue.popleft()
+
+            if current_person == person2:
+                return depth - 1
+
+            for friend in self.network[current_person]:
+                if friend not in visited:
+                    visited.add(friend)
+                    queue.append((friend, depth + 1))
+
+        return -1
+# This is an Example Usage
+if __name__ == "__main__":
+    # Create the social network
+    social_network = SocialNetwork()
+
+    # Add friends
+    social_network.add_friend("Alice", "Bob")
+    social_network.add_friend("Bob", "Janice")
+    social_network.add_friend("Alice", "Charlie")
+    social_network.add_friend("Charlie", "David")
+    social_network.add_friend("Janice", "Edward")
+
+    # Find all friends of Alice
+    print("Alice's friends:", social_network.get_friends("Alice"))
+    # Find all friends of Bob
+    print("Bob's friends:", social_network.get_friends("Bob"))
+    # Find common friends between Alice and Bob
+    print("Common friends of Alice and Bob:", social_network.common_friends("Alice", "Bob"))
+    # Find the connection level between Alice and Janice
+    print("Connection level between Alice and Janice:", social_network.find_connection("Alice", "Janice"))
+    # Find the connection level between Alice and Edward
+    print("Connection level between Alice and Edward:", social_network.find_connection("Alice", "Edward"))
+    # Find the connection level between Alice and David
+    print("Connection level between Alice and David:", social_network.find_connection("Alice", "David"))
+    # Find the connection level between Alice and a person not in the network
+    print("Connection level between Alice and NonExistingPerson:", social_network.find_connection("Alice", "NonExistingPerson"))
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ANS-1->
+
+from collections import defaultdict, deque
+
+class Task:
+    def __init__(self, name, duration):
+        self.name = name
+        self.duration = duration
+        self.est = 0  # Earliest Start Time
+        self.eft = 0  # Earliest Finish Time
+        self.lst = float('inf')  # Latest Start Time
+        self.lft = float('inf')  # Latest Finish Time
+        self.predecessors = []
+        self.successors = []
+
+class Workflow:
+    def __init__(self):
+        self.tasks = {}
+        self.start_task = None
+
+    def add_task(self, name, duration):
+        if name not in self.tasks:
+            self.tasks[name] = Task(name, duration)
+        else:
+            self.tasks[name].duration = duration
+
+    def add_dependency(self, predecessor, successor):
+        self.tasks[predecessor].successors.append(successor)
+        self.tasks[successor].predecessors.append(predecessor)
+
+    def calculate_est_eft(self):
+        queue = deque([self.start_task])
+        while queue:
+            task_name = queue.popleft()
+            task = self.tasks[task_name]
+
+            for successor_name in task.successors:
+                successor = self.tasks[successor_name]
+                successor.est = max(successor.est, task.eft)
+                successor.eft = successor.est + successor.duration
+                queue.append(successor_name)
+
+    def calculate_lst_lft(self):
+        all_tasks = list(self.tasks.values())
+        # Start from the task with the maximum EFT (end of the project)
+        end_task = max(all_tasks, key=lambda x: x.eft)
+        end_task.lft = end_task.eft
+        end_task.lst = end_task.lft - end_task.duration
+
+        queue = deque([end_task.name])
+        while queue:
+            task_name = queue.popleft()
+            task = self.tasks[task_name]
+
+            for predecessor_name in task.predecessors:
+                predecessor = self.tasks[predecessor_name]
+                predecessor.lft = min(predecessor.lft, task.lst)
+                predecessor.lst = predecessor.lft - predecessor.duration
+                queue.append(predecessor_name)
+
+    def calculate_times(self, start_task):
+        self.start_task = start_task
+        self.tasks[start_task].est = 0
+        self.tasks[start_task].eft = self.tasks[start_task].duration
+
+        # Calculate Earliest Start/Finish Times
+        self.calculate_est_eft()
+
+        # Calculate Latest Start/Finish Times
+        self.calculate_lst_lft()
+
+    def get_project_duration(self):
+        # The project's earliest finish time is the EFT of the task that finishes last
+        earliest_finish = max(task.eft for task in self.tasks.values())
+
+        # The latest finish time is the LFT of the starting task
+        latest_finish = max(task.lft for task in self.tasks.values())
+
+        return earliest_finish, latest_finish
+
+# This is an Example Usage
+if __name__ == "__main__":
+    workflow = Workflow()
+
+    # Add tasks with their durations
+    workflow.add_task("T_START", 0)
+    workflow.add_task("A", 4)
+    workflow.add_task("B", 2)
+    workflow.add_task("C", 5)
+    workflow.add_task("D", 6)
+    workflow.add_task("E", 3)
+
+    # Add dependencies (predecessor -> successor)
+    workflow.add_dependency("T_START", "A")
+    workflow.add_dependency("T_START", "B")
+    workflow.add_dependency("A", "C")
+    workflow.add_dependency("B", "C")
+    workflow.add_dependency("C", "D")
+    workflow.add_dependency("D", "E")
+
+    # Calculate the times
+    workflow.calculate_times("T_START")
+
+    # Get the project's earliest and latest completion times
+    earliest_finish, latest_finish = workflow.get_project_duration()
+    print(f"Earliest completion time: {earliest_finish}")
+    print(f"Latest completion time: {latest_finish}")
+
+----------------------------------done-------------------------------------done--------------------------------------done---------------------------------------done---------------------------------------
